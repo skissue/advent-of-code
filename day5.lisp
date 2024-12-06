@@ -25,12 +25,15 @@
            (pushnew (list b) *rules* :key #'car)
            (push a (cdr (assoc b *rules*)))))
 
+(defun sort-update (rules update)
+  (stable-sort (copy-list update)
+               (lambda (a b)
+                 (cond
+                   ((member (list a b) rules :test #'equal) t)
+                   (t nil)))))
+
 (defun part1 (data)
   (destructuring-bind (orders . updates) data
-    (fill-rules orders)
     (loop for update in updates
-          when (loop for x in update
-                     for i from 0
-                     always (loop for a in (subseq update 0 i)
-                                  never (member x (assoc  a *rules*))))
-            sum (nth (ceiling (length update) 2) update))))
+          when (equal (sort-update orders update) update)
+            sum (nth (floor (length update) 2) update))))
