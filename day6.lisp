@@ -65,8 +65,10 @@
             else do (setf guard (cons nx ny))))))
 
 (defun part2 (data)
+  (declare (optimize (speed 3) (safety 0)))
   (list-seen data)
   (destructuring-bind (obstacles guard dimensions) data
+    (declare (type (simple-array boolean) obstacles))
     (lparallel:pcount-if
      (lambda (a)
        (destructuring-bind (x . y) a
@@ -74,6 +76,7 @@
                        (equal (cons x y) guard)))
               (probably-loops-p
                (list (let ((c (alexandria:copy-array obstacles)))
+                       (declare (type (simple-array boolean) c))
                        (setf (aref c x y) t)
                        c)
                      guard dimensions)))))
