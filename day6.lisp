@@ -6,12 +6,14 @@
   (let* ((lines (coerce (uiop:read-file-lines path) 'vector))
          (dimensions (cons (length (aref lines 0))
                            (length lines)))
-         (obstacles)
+         (obstacles (make-array (list (car dimensions)
+                                      (cdr dimensions))
+                                :initial-element nil))
          (guard))
     (loop for y below (cdr dimensions)
           do (loop for x below (car dimensions)
                    when (equal #\# (aref (aref lines y) x))
-                     do (push (cons x y) obstacles)
+                     do (setf (aref obstacles x y) t)
                    when (equal #\^ (aref (aref lines y) x))
                      do (setf guard (cons x y))))
     (list obstacles guard dimensions)))
@@ -33,11 +35,10 @@
           do (push (cons x y) *seen*)
           while (and (< -1 nx (car dimensions))
                      (< -1 ny (cdr dimensions)))
-          when (member (cons nx ny) obstacles
-                       :test #'equal)
+          when (aref obstacles nx ny)
             do (setf *dir* (cons (- dy) dx))
           else do (setf guard (cons nx ny)))
-    (delete-duplicates *seen* :test #'equal)))
+    (setf *seen* (delete-duplicates *seen* :test #'equal))))
 
 (defun part1 (data)
   (list-seen data)
@@ -47,7 +48,8 @@
   (declare (optimize (speed 3) (safety 0)))
   (let ((dir '(0 . -1)))
     (destructuring-bind (obstacles guard dimensions) data
-      (declare (type (cons fixnum fixnum) dimensions))
+      (declare (type (cons fixnum fixnum) dimensions)
+               (type (simple-array boolean (* *)) obstacles))
       (loop for i from 0
             for (x . y) of-type fixnum = guard
             for (dx . dy) of-type fixnum = dir
@@ -58,22 +60,21 @@
             unless (and (< -1 nx (car dimensions))
                         (< -1 ny (cdr dimensions)))
               return nil
-            when (member (cons nx ny) obstacles
-                         :test #'equal)
+            when (aref obstacles nx ny)
               do (setf dir (cons (- dy) dx))
             else do (setf guard (cons nx ny))))))
 
 (defun part2 (data)
-  (declare (optimize (speed 3) (safety 0)))
   (list-seen data)
   (destructuring-bind (obstacles guard dimensions) data
     (lparallel:pcount-if
      (lambda (a)
        (destructuring-bind (x . y) a
-         (and (not (or (member (cons x y) obstacles
-                               :test #'equal)
+         (and (not (or (aref obstacles x y)
                        (equal (cons x y) guard)))
               (probably-loops-p
-               (list (cons (cons x y) obstacles)
+               (list (let ((c (alexandria:copy-array obstacles)))
+                       (setf (aref c x y) t)
+                       c)
                      guard dimensions)))))
      *seen*)))
