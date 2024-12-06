@@ -36,4 +36,11 @@
   (destructuring-bind (orders . updates) data
     (loop for update in updates
           when (equal (sort-update orders update) update)
-            sum (nth (floor (length update) 2) update))))
+            sum (nth (floor (length update) 2) update))))  
+
+(defun part2 (data)
+  (destructuring-bind (orders . updates) data
+    (loop for update in updates
+          for correct = (sort-update orders update)
+          unless (equal (sort-update orders update) update)
+            sum (nth (floor (length update) 2) correct))))
