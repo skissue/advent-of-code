@@ -18,7 +18,9 @@
 (defparameter *dir* '(0 . -1))
 (defparameter *seen* nil)
 
-(defun part1 (data)
+(defun list-seen (data)
+  (setf *dir* '(0 . -1))
+  (setf *seen* nil)
   (destructuring-bind (obstacles guard dimensions) data
     (loop for (x . y) = guard
           for (dx . dy) = *dir*
@@ -31,6 +33,40 @@
                        :test #'equal)
             do (setf *dir* (cons (- dy) dx))
           else do (setf guard (cons nx ny)))
-    (length (delete-duplicates *seen* :test #'equal))))
+    (delete-duplicates *seen* :test #'equal)))
 
+(defun part1 (data)
+  (list-seen data)
+  (length *seen*))
 
+(defun probably-loops-p (data)
+  (declare (optimize (speed 3) (safety 0)))
+  (setf *dir* '(0 . -1))
+  (destructuring-bind (obstacles guard dimensions) data
+    (declare (type (cons fixnum fixnum) dimensions))
+    (loop for i from 0
+          for (x . y) of-type fixnum = guard
+          for (dx . dy) of-type fixnum = *dir*
+          for nx = (+ x dx)
+          for ny = (+ y dy)
+          when (> i 10000)
+            return t
+          unless (and (< -1 nx (car dimensions))
+                      (< -1 ny (cdr dimensions)))
+            return nil
+          when (member (cons nx ny) obstacles
+                       :test #'equal)
+            do (setf *dir* (cons (- dy) dx))
+          else do (setf guard (cons nx ny)))))
+
+(defun part2 (data)
+  (list-seen data)
+  (destructuring-bind (obstacles guard dimensions) data
+    (loop for (x . y) in *seen*
+          when (and (not (or (member (cons x y) obstacles
+                                     :test #'equal)
+                             (equal (cons x y) guard)))
+                    (probably-loops-p
+                     (list (cons (cons x y) obstacles)
+                           guard dimensions)))
+            sum 1)))
