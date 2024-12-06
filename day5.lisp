@@ -28,9 +28,7 @@
 (defun sort-update (rules update)
   (stable-sort (copy-list update)
                (lambda (a b)
-                 (cond
-                   ((member (list a b) rules :test #'equal) t)
-                   (t nil)))))
+                 (member (list a b) rules :test #'equal))))
 
 (defun part1 (data)
   (destructuring-bind (orders . updates) data
