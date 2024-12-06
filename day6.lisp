@@ -1,3 +1,7 @@
+(ql:quickload :lparallel)
+
+(setf lparallel:*kernel* (lparallel:make-kernel 16))
+
 (defun parse-data (path)
   (let* ((lines (coerce (uiop:read-file-lines path) 'vector))
          (dimensions (cons (length (aref lines 0))
@@ -41,32 +45,35 @@
 
 (defun probably-loops-p (data)
   (declare (optimize (speed 3) (safety 0)))
-  (setf *dir* '(0 . -1))
-  (destructuring-bind (obstacles guard dimensions) data
-    (declare (type (cons fixnum fixnum) dimensions))
-    (loop for i from 0
-          for (x . y) of-type fixnum = guard
-          for (dx . dy) of-type fixnum = *dir*
-          for nx = (+ x dx)
-          for ny = (+ y dy)
-          when (> i 10000)
-            return t
-          unless (and (< -1 nx (car dimensions))
-                      (< -1 ny (cdr dimensions)))
-            return nil
-          when (member (cons nx ny) obstacles
-                       :test #'equal)
-            do (setf *dir* (cons (- dy) dx))
-          else do (setf guard (cons nx ny)))))
+  (let ((dir '(0 . -1)))
+    (destructuring-bind (obstacles guard dimensions) data
+      (declare (type (cons fixnum fixnum) dimensions))
+      (loop for i from 0
+            for (x . y) of-type fixnum = guard
+            for (dx . dy) of-type fixnum = dir
+            for nx = (+ x dx)
+            for ny = (+ y dy)
+            when (> i 10000)
+              return t
+            unless (and (< -1 nx (car dimensions))
+                        (< -1 ny (cdr dimensions)))
+              return nil
+            when (member (cons nx ny) obstacles
+                         :test #'equal)
+              do (setf dir (cons (- dy) dx))
+            else do (setf guard (cons nx ny))))))
 
 (defun part2 (data)
+  (declare (optimize (speed 3) (safety 0)))
   (list-seen data)
   (destructuring-bind (obstacles guard dimensions) data
-    (loop for (x . y) in *seen*
-          when (and (not (or (member (cons x y) obstacles
-                                     :test #'equal)
-                             (equal (cons x y) guard)))
-                    (probably-loops-p
-                     (list (cons (cons x y) obstacles)
-                           guard dimensions)))
-            sum 1)))
+    (lparallel:pcount-if
+     (lambda (a)
+       (destructuring-bind (x . y) a
+         (and (not (or (member (cons x y) obstacles
+                               :test #'equal)
+                       (equal (cons x y) guard)))
+              (probably-loops-p
+               (list (cons (cons x y) obstacles)
+                     guard dimensions)))))
+     *seen*)))
