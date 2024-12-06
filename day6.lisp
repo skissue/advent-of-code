@@ -1,0 +1,13 @@
+(defun parse-data (path)
+  (let ((lines (coerce (uiop:read-file-lines path) 'vector))
+        (obstacles)
+        (guard))
+    (loop for y below (length lines)
+          do (loop for x below (length (aref lines 0))
+                   when (equal #\# (aref (aref lines y) x))
+                     do (push (cons x y) obstacles)
+                   when (equal #\^ (aref (aref lines y) x))
+                     do (setf guard (cons x y))))
+    (cons obstacles guard)))
+
+(defparameter *sample-data* (parse-data "sample/day6.txt"))
