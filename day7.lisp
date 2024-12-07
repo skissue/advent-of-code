@@ -22,9 +22,13 @@
           sum target))
 
 (defun concat (a b)
-  (declare (optimize (speed 3)))
-  (let ((digits (1+ (floor (log b 10)))))
-    (+ (* a (expt 10 digits)) b)))
+  (declare (optimize (speed 3) (safety 0))
+           (type fixnum a b))
+  (let* ((digits (1+ (floor (log b 10))))
+         (padding (expt 10 digits))
+         (shifted (* a padding)))
+    (declare (type fixnum digits padding shifted))
+    (the fixnum (+ shifted b))))
 
 (defun calc-valid-p-2 (target cur remaining)
   (if (null remaining)
