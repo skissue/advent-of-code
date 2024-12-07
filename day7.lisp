@@ -34,9 +34,12 @@
     (the fixnum (+ shifted b))))
 
 (defun calc-valid-p-2 (target cur remaining)
+  (declare (optimize (speed 3) (safety 0))
+           (type fixnum target cur))
   (if (null remaining)
       (= cur target)
       (destructuring-bind (x . xs) remaining
+        (declare (type fixnum x))
         (or (calc-valid-p-2 target (+ cur x) xs)
             (calc-valid-p-2 target (* cur x) xs)
             (calc-valid-p-2 target (concat cur x) xs)))))
