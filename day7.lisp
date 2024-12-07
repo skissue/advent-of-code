@@ -1,4 +1,7 @@
 (ql:quickload :cl-ppcre)
+(ql:quickload :lparallel)
+
+(setf lparallel:*kernel* (lparallel:make-kernel 12))
 
 (defun parse-data (path)
   (mapcar (lambda (x)
@@ -39,6 +42,10 @@
             (calc-valid-p-2 target (concat cur x) xs)))))
 
 (defun part2 (data)
-  (loop for (target . (start . nums)) in data
-        when (calc-valid-p-2 target start nums)
-          sum target))
+  (lparallel:pmap-reduce
+   (lambda (d)
+     (destructuring-bind (target . (start . nums)) d
+       (if (calc-valid-p-2 target start nums)
+           target 0)))
+   #'+
+   data))
