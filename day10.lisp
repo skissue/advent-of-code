@@ -39,9 +39,6 @@
       (loop for h from 9 downto 1
             do (loop for x below width
                      do (loop for y below height
-                              do (setf (aref reach-grid x y)
-                                       (delete-duplicates (aref reach-grid x y)
-                                                          :test #'equal))
                               when (= (aref data x y) h)
                                 do (loop for dir in +dirs+
                                          do (append-if-=-in-dir
