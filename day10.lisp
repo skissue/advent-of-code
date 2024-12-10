@@ -53,3 +53,10 @@
                       when (= (aref data x y) 0)
                         sum (length (delete-duplicates (aref reach-grid x y))))))))
 
+(defun part2 (data)
+  (destructuring-bind (width height) (array-dimensions data)
+    (let ((reach-grid (reachability-grid data)))
+      (loop for x below width
+            sum (loop for y below height
+                      when (= (aref data x y) 0)
+                        sum (length (aref reach-grid x y)))))))
