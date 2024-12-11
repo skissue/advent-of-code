@@ -1,4 +1,4 @@
-(import 'org.tfeb.hax.memoize:def-memoized-function)
+(import 'fmemo:define-memo-function)
 
 (defparameter *sample-data* '(125 17))
 (defparameter *data*
@@ -36,17 +36,20 @@
         finally
            (return (length stones))))
 
-(def-memoized-function count-expansion (stone iterations)
-  (if (= ))
-  (loop repeat (1+ iterations)
-        for stones = (list stone) then (blink stones)
-        finally
-           (return (length stones))))
+(defun count-expansion (stone iterations)
+  (if (zerop iterations)
+      1
+      (let ((next (step-stone stone)))
+        (loop for s in next
+              sum (count-expansion s (1- iterations))))))
+
+(define-memo-function count-expansion (stone iterations)
+  (if (zerop iterations)
+      1
+      (let ((next (step-stone stone)))
+        (loop for s in next
+              sum (count-expansion s (1- iterations))))))
 
 (defun part2 (data)
-  (loop for i from 0 to 38
-        for stones = data then (blink stones)
-        do (format t "iteration ~d, length ~d~%"
-                   i (length stones))
-        finally
-           (return (length stones))))
+  (loop for stone in data
+        sum (count-expansion stone 75)))
