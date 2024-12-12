@@ -17,38 +17,39 @@
                       (-1 . 0)
                       (0 . -1)))
 
-(defparameter *seen* nil)
+(defparameter *seen* (make-hash-table :test #'equal))
 (defun expand-shape (data point &optional value)
   (destructuring-bind ((x . y) (width height))
       (list point (array-dimensions data))
     (unless value
       (setf value (aref data x y)))
-    (push (cons x y) *seen*)
+    (setf (gethash (cons x y) *seen*) t)
     (loop for (dx . dy) in +dirs+
           for nx = (+ x dx)
           for ny = (+ y dy)
           when (and (< -1 nx width)
                     (< -1 ny height)
                     (equal value (aref data nx ny))
-                    (not (member (cons nx ny) *seen* :test #'equal)))
+                    (not (gethash (cons nx ny) *seen*)))
             do (expand-shape data (cons nx ny) value))))
 
 (defun perimeter (points)
-  (loop for (x . y) in points
+  (loop for (x . y) being the hash-keys of points
         sum (loop for (dx . dy) in +dirs+
                   for nx = (+ x dx)
                   for ny = (+ y dy)
-                  count (not (member (cons nx ny) points :test #'equal)))))
+                  count (not (gethash (cons nx ny) points)))))
 
 (defun part1 (data)
   (loop with (width height) = (array-dimensions data)
-        with visited = nil
+        with visited = (make-hash-table :test #'equal)
         for x below width
         sum (loop for y below height
-                  when (not (member (cons x y) visited :test #'equal))
-                    do (setf *seen* nil)
+                  when (not (gethash (cons x y) visited))
+                    do (setf *seen* (make-hash-table :test #'equal))
                        (expand-shape data (cons x y))
-                       (setf visited (append visited *seen*))
-                    and sum (* (length *seen*)
+                       (loop for key being the hash-keys of *seen*
+                             do (setf (gethash key visited) t))
+                    and sum (* (hash-table-count *seen*)
                                (perimeter *seen*)))))
 
