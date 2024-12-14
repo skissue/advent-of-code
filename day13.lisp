@@ -12,23 +12,28 @@
 (defparameter *sample-data* (parse-data "sample/day13.txt"))
 (defparameter *data* (parse-data "input/day13.txt"))
 
+;; alpha*ax + beta*bx = px
+;; alpha*ay + beta*by = py
 (defun solve-machine (data)
   (destructuring-bind (ax ay bx by px py) data
-    (let ((a (mat2 (list ax bx ay by)))
-          (b (matn 2 1 (list px py))))
-      (m* (minv a) b))))
-
-(defun fintegerp (num)
-  (< (abs
-      (- num
-         (fround num)))
-     0.0001))
+    (let* ((scale (/ ax ay))           
+           (by1 (* by scale))
+           (py1 (* py scale))
+           (beta (/ (- px py1) (- bx by1)))
+           (alpha (/ (- px (* beta bx)) ax)))
+      (values alpha beta))))
 
 (defun part1 (data)
   (loop for machine in data
-        for solution = (solve-machine machine)
-        for a = (miref solution 0)
-        for b = (miref solution 1)
-        when (and (fintegerp a) (fintegerp b))
-          sum (+ (* (round a) 3)
-                 (round b))))
+        for (alpha beta) = (multiple-value-list (solve-machine machine))
+        when (and (integerp alpha) (integerp beta))
+          sum (+ (* (round alpha) 3)
+                 (round beta))))
+
+(defun part2 (data)
+  (loop for (ax ay bx by px py) in data
+        for (alpha beta) = (multiple-value-list
+                            (solve-machine (list ax ay bx by (+ px 10000000000000) (+ py 10000000000000))))
+        when (and (integerp alpha) (integerp beta))
+          sum (+ (* (round alpha) 3)
+                 (round beta))))
