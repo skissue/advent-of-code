@@ -1,0 +1,42 @@
+(defun parse-data (path)
+  (let (data)
+    (cl-ppcre:do-register-groups (x y vx vy)
+        ("p=(.*),(.*) v=(.*),(.*)\\n" (uiop:read-file-string path) data)
+      (push (cons (cons (parse-integer x)
+                        (parse-integer y))
+                  (cons (parse-integer vx)
+                        (parse-integer vy)))
+            data))))
+
+(defparameter *sample-data* (parse-data "sample/day14.txt"))
+(defparameter *data* (parse-data "input/day14.txt"))
+
+(defparameter *time* 100)
+(defparameter *grid* (cons 101 103))
+
+(defun part1 (data)
+  (let* ((quad1 0)
+         (quad2 0)
+         (quad3 0)
+         (quad4 0)
+         (width (car *grid*))
+         (height (cdr *grid*))
+         (half-width (truncate width 2))
+         (right (- width half-width))
+         (half-height (truncate height 2))
+         (upper (- height half-height)))
+    (loop for ((x0 . y0) . (dx . dy)) in data
+          for xf = (mod (+ x0 (* dx *time*)) width)
+          for yf = (mod (+ y0 (* dy *time*)) height)
+          do
+             (cond
+               ((and (< xf half-width) (< yf half-height))
+                (incf quad2))
+               ((and (>= xf right) (< yf half-height))
+                (incf quad1))
+               ((and (< xf half-width) (>= yf upper))
+                (incf quad3))
+               ((and (>= xf right) (>= yf upper))
+                (incf quad4))))
+    (* quad1 quad2 quad3 quad4)))
+
